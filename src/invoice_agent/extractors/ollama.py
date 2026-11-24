@@ -75,7 +75,7 @@ class OllamaExtractor:
         base_url: str = DEFAULT_URL,
         num_ctx: int = 8192,
         cache_dir: Path | None = Path("runs/cache/ollama"),
-        timeout_s: float = 300.0,
+        timeout_s: float = 600.0,
     ):
         self.model = model
         self.base_url = base_url.rstrip("/")

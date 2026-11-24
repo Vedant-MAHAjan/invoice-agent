@@ -5,6 +5,7 @@ from __future__ import annotations
 from invoice_agent.extractors.base import Extraction, Extractor
 from invoice_agent.schema import Example
 from invoice_agent.validate.gstin import repair_party_tax_ids
+from invoice_agent.validate.totals import repair_total_from_words
 
 
 class RepairedExtractor:
@@ -14,10 +15,11 @@ class RepairedExtractor:
 
     def extract(self, example: Example) -> Extraction:
         out = self.inner.extract(example)
-        invoice, notes = repair_party_tax_ids(out.invoice)
+        invoice, party_notes = repair_party_tax_ids(out.invoice)
+        invoice, total_notes = repair_total_from_words(invoice, example.ocr_text)
         return Extraction(
             invoice=invoice,
             cost_usd=out.cost_usd,
             latency_s=out.latency_s,
-            meta={**out.meta, "repairs": notes},
+            meta={**out.meta, "repairs": party_notes + total_notes},
         )
