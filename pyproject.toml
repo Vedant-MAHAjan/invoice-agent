@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "invoice-agent"
+version = "0.1.0"
+description = "Invoice extraction to a strict schema, validated, calibrated and posted to ERPNext."
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.9",
+    "python-dateutil>=2.9",
+    "rapidfuzz>=3.10",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+invoice-eval = "invoice_agent.harness:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
