@@ -47,11 +47,20 @@ is the first letter of the holder's name, so tax IDs the model put on the wrong 
 |---|---|---|
 | MIDD | [Zenodo 5113009](https://zenodo.org/record/5113009), CC-BY-4.0 | Token text only, 7 header fields, no line items. 708 files → 684 after exact-duplicate removal. Fields with no annotation in a document aren't scored for it (e.g. total is unlabeled on 98 docs). |
 
+| FATURA | [Zenodo 10371464](https://zenodo.org/records/10371464), CC-BY-4.0 | 10,000 synthetic images from 50 templates. Values are parsed out of caption-bearing annotation text; no line-item labels. We sample 4 docs per template per split (400) and OCR them locally with Apple Vision. **Totals don't reconcile** (subtotal − discount + tax = total holds on 11 of 5,597), so FATURA is used for extraction, not for arithmetic validation. |
+
 ```bash
 mkdir -p data/raw/midd/archive data/raw/midd/extracted
 curl -L -o data/raw/midd/archive/IOB.rar https://zenodo.org/api/records/5113009/files/IOB.rar/content
 tar -xf data/raw/midd/archive/IOB.rar -C data/raw/midd/extracted
 .venv/bin/python -m invoice_agent.data.midd data/raw/midd/extracted/IOB data/canonical/midd.jsonl
+
+# FATURA (691 MB download; needs the OCR tool: swiftc -O tools/ocr/vision_ocr.swift -o tools/ocr/vision_ocr)
+mkdir -p data/raw/fatura/archive data/raw/fatura/extracted
+curl -L -o data/raw/fatura/archive/FATURA2.zip https://zenodo.org/api/records/10371464/files/FATURA2.zip/content
+unzip -q data/raw/fatura/archive/FATURA2.zip 'invoices_dataset_final/images/*' \
+    'invoices_dataset_final/Annotations/Original_Format/*' 'invoices_dataset_final/strat*' -d data/raw/fatura/extracted
+.venv/bin/python -m invoice_agent.data.fatura data/raw/fatura/extracted/invoices_dataset_final data/canonical/fatura.jsonl
 ```
 
 ## Data policy

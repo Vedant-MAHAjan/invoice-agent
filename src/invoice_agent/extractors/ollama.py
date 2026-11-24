@@ -63,10 +63,8 @@ def inline_refs(schema: dict[str, Any]) -> dict[str, Any]:
 
 
 def user_content(example: Example) -> str:
-    if example.document_path:
-        raise ExtractionError(f"{example.doc_id}: PDF/image input needs OCR first (text-only extractor)")
     if not example.ocr_text:
-        raise ExtractionError(f"{example.doc_id}: no ocr_text")
+        raise ExtractionError(f"{example.doc_id}: no ocr_text (run OCR first; this extractor reads text)")
     return f"<document>\n{example.ocr_text}\n</document>\n\n{USER_TEXT}"
 
 

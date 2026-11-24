@@ -11,3 +11,4 @@ runs/
 
 .env
 data/canonical/
+tools/ocr/vision_ocr
