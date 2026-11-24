@@ -10,3 +10,4 @@ data/private/
 runs/
 
 .env
+data/canonical/

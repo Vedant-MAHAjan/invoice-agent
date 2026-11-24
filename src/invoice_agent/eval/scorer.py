@@ -166,7 +166,7 @@ def aggregate(results: list[DocResult]) -> dict[str, Any]:
             "correct": correct,
             "ci95": [round(lo, 4), round(hi, 4)],
         },
-        "micro_header": header.as_dict(),
-        "micro_line_items": lines.as_dict(),
+        "micro_header": header.as_dict() if header.tp + header.fp + header.fn else None,
+        "micro_line_items": lines.as_dict() if lines.tp + lines.fp + lines.fn else None,
         "per_field": {k: per_field[k].as_dict() for k in sorted(per_field)},
     }

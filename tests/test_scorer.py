@@ -63,5 +63,7 @@ def test_aggregate_and_wilson():
     agg = aggregate([good, bad])
     assert agg["doc_all_fields_correct"]["correct"] == 1
     assert agg["micro_header"]["recall"] == 0.5
+    header_only = aggregate([score_document(ex(labeled=("total",)), GOLD)])
+    assert header_only["micro_line_items"] is None
     lo, hi = wilson_interval(0, 30)
     assert lo == 0.0 and 0.10 < hi < 0.12

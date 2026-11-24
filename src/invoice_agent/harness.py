@@ -82,8 +82,8 @@ def main(argv: list[str] | None = None) -> None:
     o = report["overall"]
     d = o["doc_all_fields_correct"]
     print(f"extractor={report['extractor']} docs={o['n_docs']} -> {out}")
-    print(f"  header micro F1      {o['micro_header']['f1']:.3f}")
-    print(f"  line-item micro F1   {o['micro_line_items']['f1']:.3f}")
+    for label, key in (("header micro F1", "micro_header"), ("line-item micro F1", "micro_line_items")):
+        print(f"  {label:<20} {f'{o[key]['f1']:.3f}' if o[key] else 'n/a (not labeled)'}")
     print(f"  all-fields-correct   {d['rate']:.3f}  (95% CI {d['ci95'][0]:.3f}-{d['ci95'][1]:.3f})")
 
 

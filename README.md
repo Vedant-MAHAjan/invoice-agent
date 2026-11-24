@@ -24,6 +24,19 @@ Each run writes `runs/<ts>-<extractor>/predictions.jsonl` and `report.json`. The
 per-field P/R/F1, header and line-item micro F1, and the all-fields-correct rate with a 95% Wilson CI,
 broken down by source.
 
+## Datasets
+
+| Dataset | Source | Notes |
+|---|---|---|
+| MIDD | [Zenodo 5113009](https://zenodo.org/record/5113009), CC-BY-4.0 | Token text only, 7 header fields, no line items. 708 files → 684 after exact-duplicate removal. Fields with no annotation in a document aren't scored for it (e.g. total is unlabeled on 98 docs). |
+
+```bash
+mkdir -p data/raw/midd/archive data/raw/midd/extracted
+curl -L -o data/raw/midd/archive/IOB.rar https://zenodo.org/api/records/5113009/files/IOB.rar/content
+tar -xf data/raw/midd/archive/IOB.rar -C data/raw/midd/extracted
+.venv/bin/python -m invoice_agent.data.midd data/raw/midd/extracted/IOB data/canonical/midd.jsonl
+```
+
 ## Data policy
 
 - `data/raw/`: downloaded public datasets. Gitignored.

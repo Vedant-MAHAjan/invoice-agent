@@ -48,7 +48,7 @@ def to_decimal(value: Any) -> Decimal | None:
     return -d if negative else d
 
 
-def to_date(value: Any) -> dt.date | None:
+def to_date(value: Any, dayfirst: bool = False) -> dt.date | None:
     if value is None:
         return None
     if isinstance(value, dt.datetime):
@@ -56,7 +56,7 @@ def to_date(value: Any) -> dt.date | None:
     if isinstance(value, dt.date):
         return value
     try:
-        return date_parser.parse(str(value), dayfirst=False, fuzzy=True).date()
+        return date_parser.parse(str(value), dayfirst=dayfirst, fuzzy=True).date()
     except (ValueError, OverflowError):
         return None
 
