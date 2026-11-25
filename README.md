@@ -98,10 +98,33 @@ invoice date, total, currency) are all correct. Signals are gold-free, so the sa
 .venv/bin/invoice-route apply --model runs/route-midd-dev/model.json --predictions runs/<test>/predictions.jsonl ...
 ```
 
+Posting raw supplier strings (strict):
+
 | Dev set | Auto-post everything | Hard gates only | Target ≤5% error | Target ≤1% error |
 |---|---|---|---|---|
 | MIDD (323) | 100%, 27.9% wrong | 87.0%, 26.3% wrong | 31.6% auto-posted, 4.9% wrong | 3.4%, 0 wrong |
 | FATURA (200) | 100%, 16.0% wrong | 49.5%, 13.1% wrong | 13.5%, 3.7% wrong | 8.5%, 0 wrong |
+
+Resolving the supplier against a **supplier master** first (`--master-split dev`), the way AP
+actually posts:
+
+| Dev set | Auto-post everything | Hard gates only | Target ≤2% error | Target ≤5% error |
+|---|---|---|---|---|
+| MIDD (323) | 100%, 20.4% wrong | 84.2%, 15.4% wrong | **40.9%** auto-posted, 1.5% wrong | **62.8%**, 4.9% wrong |
+| FATURA (200) | 100%, 15.0% wrong | 43.5%, 9.2% wrong | 7.0%, 0 wrong | **41.5%**, 4.8% wrong |
+
+### Supplier master (`erp/vendor_master.py`)
+
+AP doesn't post the raw supplier string; it matches the invoice to an onboarded supplier, by
+valid GSTIN first and then by name, and sends anything unmatched to review as a possible new vendor.
+The master is built from labeled documents as a stand-in for the ERP's supplier list; OCR variants
+in the labels (`SHAL MARKETING`, `AH MARKETING`) are merged by shared GSTIN, so MIDD collapses to
+5 suppliers. To keep it leak-free, the test run uses a master built from dev labels only, and on
+dev each of 5 folds uses a master built from the other folds.
+
+On dev, resolution was right for 311/323 MIDD and 117/136 FATURA invoices, and **never picked the
+wrong supplier**: every miss was "unknown → review". A bare OCR alias like `marketing` can only match
+nearly exactly, so a different "XYZ MARKETING" isn't absorbed into SHAH MARKETING.
 
 What we learned:
 - **The model's self-reported "suspicious instructions" flag is useless as a gate:** it fires on
@@ -112,8 +135,8 @@ What we learned:
 - **Most remaining MIDD "errors" are span conventions, not wrong values:** 61 of 105 are a supplier
   name with a branch suffix (`SHAH MARKETING (MANGALWAR PETH)` vs `SHAH MARKETING`) or an invoice
   number with/without a `/ GST` suffix. Ignoring those, posting-critical correctness is 88.5%, not
-  72.1%. A real AP system resolves the supplier against its vendor master rather than posting the
-  raw string, which is the next step.
+  72.1%. Resolving the supplier against a master (below) handles the supplier half of that; the
+  invoice-number half (`/ GST` suffixes) remains and is now the largest MIDD error class.
 
 ## Datasets
 

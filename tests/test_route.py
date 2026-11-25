@@ -5,7 +5,7 @@ from decimal import Decimal
 from invoice_agent.route.calibrate import fit, out_of_fold_scores, pick, risk_coverage
 from invoice_agent.route.cli import main as route_main
 from invoice_agent.route.signals import agreement, compute_signals, grounded
-from invoice_agent.schema import Invoice
+from invoice_agent.schema import Example, Invoice, Split
 
 TODAY = dt.date(2026, 11, 25)
 TEXT = "AVIVA DOORS TAX INVOICE Invoice No . : TI-122/19 - 20 Date : 12-04-2019 Grand Total 2,80,250.00"
@@ -72,7 +72,9 @@ def test_cli_fit_then_apply(tmp_path):
         for i in range(40):
             good = i % 4 != 0
             inv = GOOD if good else GOOD.model_copy(update={"invoice_number": f"INVOICE ID {i}"})
-            fd.write(json.dumps({"doc_id": f"d{i}", "ocr_text": TEXT}) + "\n")
+            ex = Example(doc_id=f"d{i}", source="t", split=Split.DEV, ocr_text=TEXT,
+                         labeled_fields=frozenset({"invoice_number"}), gold=GOOD)
+            fd.write(ex.model_dump_json() + "\n")
             fp.write(json.dumps({
                 "doc_id": f"d{i}", "prediction": inv.model_dump(mode="json"),
                 "errors": [] if good else ["invoice_number"], "meta": {"repairs": []},
