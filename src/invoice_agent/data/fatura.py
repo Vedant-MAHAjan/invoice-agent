@@ -152,7 +152,9 @@ def sample(stems: list[str], splits: dict[str, Split], per_template: int, seed: 
     return picked
 
 
-def convert(root: Path, per_template: int, seed: int, ocr: bool = True) -> tuple[list[Example], Counter]:
+def convert(
+    root: Path, per_template: int, seed: int, ocr: bool = True, columns: bool = False
+) -> tuple[list[Example], Counter]:
     stats: Counter = Counter()
     splits = read_split_files(root)
     ann_dir = root / "Annotations" / "Original_Format"
@@ -164,7 +166,7 @@ def convert(root: Path, per_template: int, seed: int, ocr: bool = True) -> tuple
         for path, boxes, error in run_vision_ocr(paths):
             if error:
                 stats["ocr_error"] += 1
-            ocr_text[Path(path).stem] = boxes_to_text(boxes)
+            ocr_text[Path(path).stem] = boxes_to_text(boxes, columns=columns)
 
     examples = []
     for s in stems:
@@ -193,8 +195,9 @@ def main() -> None:
     ap.add_argument("--per-template", type=int, default=4)
     ap.add_argument("--seed", type=int, default=13)
     ap.add_argument("--no-ocr", action="store_true")
+    ap.add_argument("--columns", action="store_true", help="keep side-by-side blocks together in OCR text")
     args = ap.parse_args()
-    examples, stats = convert(args.root, args.per_template, args.seed, ocr=not args.no_ocr)
+    examples, stats = convert(args.root, args.per_template, args.seed, ocr=not args.no_ocr, columns=args.columns)
     write_examples(args.out, examples)
     print(json.dumps(dict(sorted(stats.items())), indent=2))
 

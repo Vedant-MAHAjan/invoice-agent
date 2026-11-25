@@ -62,12 +62,20 @@ disagreements are OCR errors in the gold labels themselves.
 
 | | Header micro F1 | All fields correct (95% CI) |
 |---|---|---|
-| LLM only | 0.908 | 46.0% (39.2–52.9) |
+| LLM only, row-by-row OCR text | 0.908 | 46.0% (39.2–52.9) |
 | + repairs | 0.908 | 46.0% (no-op: no amount in words, placeholder tax IDs) |
+| LLM only, column-aware OCR text (`--columns`) | 0.912 | 48.0% (41.2–54.9) |
+
+Column-aware text keeps side-by-side supplier/buyer blocks together instead of interleaving them.
+It helped the fields it targets (supplier name 0.88 → 0.91, invoice number 0.92 → 0.95) and hurt
+no money field, but at the document level it fixed 12 and broke 8, which is **not a significant
+difference** on 200 docs. Most remaining supplier-address errors aren't layout: 19 of 73 are
+addresses the OCR never read, 22 are partial spans, 15 are the wrong text block picked.
 
 Money fields are near perfect (subtotal, total, amount due 1.00; tax 0.97). The weak fields are:
 - **Supplier address (0.57) and name (0.88):** two-column headers. Rebuilding OCR lines row by row
-  interleaves the supplier and buyer blocks, and the model often returns null for the supplier.
+  interleaves the supplier and buyer blocks, and the model often returns null for the supplier
+  (see the column-aware row above).
 - **Tax IDs (0.10–0.56):** FATURA's GSTINs are template placeholders (`O4AROPO98743125`), and
   OCR reads letter O as zero; there's no real check digit to recover them.
 
@@ -90,6 +98,8 @@ curl -L -o data/raw/fatura/archive/FATURA2.zip https://zenodo.org/api/records/10
 unzip -q data/raw/fatura/archive/FATURA2.zip 'invoices_dataset_final/images/*' \
     'invoices_dataset_final/Annotations/Original_Format/*' 'invoices_dataset_final/strat*' -d data/raw/fatura/extracted
 .venv/bin/python -m invoice_agent.data.fatura data/raw/fatura/extracted/invoices_dataset_final data/canonical/fatura.jsonl
+# column-aware text variant
+.venv/bin/python -m invoice_agent.data.fatura data/raw/fatura/extracted/invoices_dataset_final data/canonical/fatura-columns.jsonl --columns
 ```
 
 ## Data policy
