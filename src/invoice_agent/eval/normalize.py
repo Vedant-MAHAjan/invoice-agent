@@ -87,7 +87,8 @@ def values_match(kind: FieldKind, gold: Any, pred: Any) -> bool:
     if g is None or p is None:
         return g is None and p is None
     if kind is FieldKind.TEXT:
-        return g == p or fuzz.token_sort_ratio(g, p) >= TEXT_MATCH_THRESHOLD
+        # ratio tolerates OCR-merged tokens ("SD42587"); token_sort tolerates reordering.
+        return g == p or max(fuzz.ratio(g, p), fuzz.token_sort_ratio(g, p)) >= TEXT_MATCH_THRESHOLD
     if kind is FieldKind.MONEY:
         return abs(g - p) <= MONEY_TOLERANCE
     if kind is FieldKind.NUMBER:

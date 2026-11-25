@@ -58,6 +58,19 @@ picked the wrong number on the dominant layout. A few lines of deterministic cod
 The amount-in-words check agrees with the gold total on 409 of 423 MIDD docs; several
 disagreements are OCR errors in the gold labels themselves.
 
+## Results so far (FATURA dev, 200 docs from 50 templates, qwen2.5-coder:14b, Apple Vision OCR)
+
+| | Header micro F1 | All fields correct (95% CI) |
+|---|---|---|
+| LLM only | 0.908 | 46.0% (39.2–52.9) |
+| + repairs | 0.908 | 46.0% (no-op: no amount in words, placeholder tax IDs) |
+
+Money fields are near perfect (subtotal, total, amount due 1.00; tax 0.97). The weak fields are:
+- **Supplier address (0.57) and name (0.88):** two-column headers. Rebuilding OCR lines row by row
+  interleaves the supplier and buyer blocks, and the model often returns null for the supplier.
+- **Tax IDs (0.10–0.56):** FATURA's GSTINs are template placeholders (`O4AROPO98743125`), and
+  OCR reads letter O as zero; there's no real check digit to recover them.
+
 ## Datasets
 
 | Dataset | Source | Notes |

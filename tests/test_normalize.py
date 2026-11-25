@@ -42,6 +42,13 @@ def test_id_ignores_separators_and_case():
 def test_text_is_fuzzy_but_bounded():
     assert values_match(FieldKind.TEXT, "Northwind Traders Ltd.", "NORTHWIND TRADERS LTD")
     assert not values_match(FieldKind.TEXT, "Northwind Traders", "Contoso Office")
+    # OCR dropped a space; still the same address
+    assert values_match(
+        FieldKind.TEXT,
+        "4894 Melanie Pass Apt. 742 Tammyland, SD 42587 US",
+        "4894 Melanie Pass Apt. 742\nTammyland, SD42587 US",
+    )
+    assert not values_match(FieldKind.TEXT, "SIDDHARTH PROPERTIES", "SIDDHARTH PROPERTIES SIDDHARTH EDEN COURT MODEL COLONY")
 
 
 def test_money_tolerance():
