@@ -79,6 +79,42 @@ Money fields are near perfect (subtotal, total, amount due 1.00; tax 0.97). The 
 - **Tax IDs (0.10–0.56):** FATURA's GSTINs are template placeholders (`O4AROPO98743125`), and
   OCR reads letter O as zero; there's no real check digit to recover them.
 
+## Confidence scoring and review routing (dev, out-of-fold)
+
+An invoice is safe to post only if its **posting-critical fields** (supplier name, invoice number,
+invoice date, total, currency) are all correct. Signals are gold-free, so the same code runs in production:
+
+- **Hard gates** (always review): missing supplier/number/date/total, a critical value that doesn't
+  appear in the document (hallucination), total disagreeing with the amount in words, impossible date.
+- **Soft signals:** captions leaking into values, total not printed, repaired fields, GSTIN check
+  digit/ownership, subtotal + tax ≠ total, and field agreement with an independent second
+  extraction (qwen2.5-coder:7b).
+- A small logistic regression (pure Python) scores P(all critical fields correct); scores are
+  5-fold out-of-fold, and the threshold is the largest auto-post share whose error stays within target.
+
+```bash
+.venv/bin/invoice-route fit --predictions runs/<14b>/predictions.jsonl --second runs/<7b>/predictions.jsonl \
+    --data data/canonical/midd.jsonl --out runs/route-midd-dev
+.venv/bin/invoice-route apply --model runs/route-midd-dev/model.json --predictions runs/<test>/predictions.jsonl ...
+```
+
+| Dev set | Auto-post everything | Hard gates only | Target ≤5% error | Target ≤1% error |
+|---|---|---|---|---|
+| MIDD (323) | 100%, 27.9% wrong | 87.0%, 26.3% wrong | 31.6% auto-posted, 4.9% wrong | 3.4%, 0 wrong |
+| FATURA (200) | 100%, 16.0% wrong | 49.5%, 13.1% wrong | 13.5%, 3.7% wrong | 8.5%, 0 wrong |
+
+What we learned:
+- **The model's self-reported "suspicious instructions" flag is useless as a gate:** it fires on
+  about half of clean invoices (payment-terms boilerplate). It's kept as a weak feature only.
+- **Second-model agreement is strong per field, not overall.** When 14B and 7B disagree on the
+  MIDD invoice date, 14B is wrong 37% of the time vs 0.7% when they agree (total: 31% vs 2.4%).
+  But on supplier name the relation inverts, because both models make the same "mistake".
+- **Most remaining MIDD "errors" are span conventions, not wrong values:** 61 of 105 are a supplier
+  name with a branch suffix (`SHAH MARKETING (MANGALWAR PETH)` vs `SHAH MARKETING`) or an invoice
+  number with/without a `/ GST` suffix. Ignoring those, posting-critical correctness is 88.5%, not
+  72.1%. A real AP system resolves the supplier against its vendor master rather than posting the
+  raw string, which is the next step.
+
 ## Datasets
 
 | Dataset | Source | Notes |
